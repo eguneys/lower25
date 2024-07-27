@@ -33,7 +33,7 @@ jobs:
         run: |
            cd aset
            pnpm install
-           pnpm build
+           pnpm bundle
 
       - name: Build project
         run: |
