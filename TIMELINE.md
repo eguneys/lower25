@@ -1,3 +1,104 @@
+## Game's Concept
+
+A 2d Platformer game
+
+### Platforms
+
+Flat, weak, Timer, Oscillating, Gapped
+Spikes, Moving Spikes
+
+### Environment
+
+1 Tutorial, 3 main, 1 boss, 2 secret sections
+
+#### Decorations
+
+Auto Tile, Decoration objects on floor, ceiling, and mid air. Wall Decals, Solid Platform Decals, Parallax Background and Foreground
+
+### Visual effects
+
+Land dust, double jump indicator, bullet shells, death juice, star flash on collect, flash on knockback
+
+### Powerups
+
+- Replenish jump
+- More damage
+- More shield
+- Invincible timer
+
+### Collectibles
+
+- Themed collectibles
+- Functional collectibles
+
+### Level Design
+
+Tutorial level introduces:
+ - movement
+ - main mechanics
+ - functional collectibles
+ - powerups
+ - combat system
+
+1. level
+ - challenge movement
+2. level
+ - exploration
+3. level
+ - challenge combat
+Boss level
+ - boss battle
+1. Secret level
+ - exploration
+2. Secret level
+ - challenge combat
+
+
+### Mechanics
+
+Combat system, player shoots projectiles
+Abilities, player can jump, double jump, wall climb
+Inventory, player can collect collectibles which appears at the side of the screen to collect them all unlocks features.
+
+### Characters
+
+#### Main character
+
+#### Side kick
+
+#### Enemies
+
+
+### Story
+
+Narrative, atmosphere, world building
+
+## Short Summary
+
+- A 2d Platformer game
+- 1 Main character
+- 1 Side character
+- 3 Enemies
+- 1 Boss
+- 2 Set of collectibles
+- 2 types of Powerups
+
+- enemy types
+
+- flat platforms, weak platforms, timer platforms, spikes, oscillating spikes, gapped platforms, moving spikes,
+
+- decorations, auto tiling system, decals on walls or inside solid platforms, parrallax background and foreground.
+
+- environment, 1 tutorial, 3 main, 1 boss, 2 secret sections
+
+- visual effects, land dust, double jump indicator, bullet shells, death juice, star flash on collect, flash on knockback
+
+- mechanics, combat system, power-ups, abilities, player movement, checkpoints, inventory, narrative, atmosphere, world building
+
+- level design, purpose, theme and atmosphere, structure, challenges and rewards
+
+- misc, jetpack, grapplink hook, triple jump as a powerup, elemental burst, homing missiles, electric lightning.
+
 ## Brainstorm Ideas
 
 ### Overall design
