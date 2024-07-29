@@ -1,6 +1,7 @@
 import content_page0 from '../content/out_0.png'
 //import content_json0 from '../content/out_0.json'
 import content_con0 from '../content/out_0.con?raw'
+import levels_json from '../content/levels.con.json'
 
 
 function load_image(path: string): Promise<HTMLImageElement> {
@@ -73,14 +74,74 @@ type ContentInfo = {
   packs: ContentPack[]
 }
 
+type N2 = [number, number]
+type LevelTile = { px: N2, src: N2 }
+
+type LevelInfo = {
+  name: string,
+  w: number,
+  h: number,
+  te: LevelTile[][]
+}
+
+function decon_levels(levels: any): LevelInfo[] {
+  function decodeBase64ToArrayBuffer(base64String: string) {
+    const binaryString = atob(base64String);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return new Uint16Array(bytes.buffer);
+  }
+
+  function decode_level_data(data: string) {
+
+    function decode_src(a: number) {
+      let x = a % 1024
+      let y = Math.floor(a / 1024)
+      return [x * 8, y * 8]
+    }
+
+    let res = []
+    let buffer = decodeBase64ToArrayBuffer(data)
+    for (let offset = 0; offset < buffer.length;) {
+      let i = buffer[offset]
+      offset ++
+      let l = buffer[offset]
+      offset++
+
+      let g = [...buffer.slice(offset, offset + l)]
+      offset+=l
+
+      res.push(...g.map(g => ({ src: decode_src(i), px: decode_src(g) })))
+    }
+    return res
+  }
+
+  return levels.map((level: any) => {
+
+    let { n, w, h, te } = level
+
+    return {
+      name: n, w, h, te: decode_level_data(te)
+    }
+  })
+}
+
 class Content {
 
   image!: HTMLImageElement
   info!: ContentInfo[]
 
+  levels!: LevelInfo[]
+
   async load() {
     this.image = await load_image(content_page0)
     this.info = decon(content_con0)
+
+    this.levels = decon_levels(levels_json)
+    console.log(this.levels)
   }
 }
 
