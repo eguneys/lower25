@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import viteImagemin from 'vite-plugin-imagemin'
 
 let colors = []
-let reserved = [...[], ...colors]
+let reserved = [...['_current_frame'], ...colors]
 
 export default defineConfig({
   base: './',

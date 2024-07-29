@@ -3,8 +3,7 @@ import { Anim } from './play'
 
 export type TextAlign = 'c'
 
-export default class Graphics {
-  static make = (width: number, height: number, pixelated = true) => {
+export function make_graphics(width: number, height: number, pixelated = true) {
 
     let canvas = document.createElement('canvas')
     if (pixelated) {
@@ -24,6 +23,10 @@ export default class Graphics {
  
     return new Graphics(canvas, ctx)
   }
+
+
+
+export default class Graphics {
 
   get width() {
     return this.canvas.width
