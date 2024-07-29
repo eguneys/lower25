@@ -10,6 +10,7 @@ export default defineConfig({
     optipng: { optimizationLevel: 7 }
   })],
   build: {
+    target: 'esnext',
     minify: 'terser',
     terserOptions: {
       mangle: {
