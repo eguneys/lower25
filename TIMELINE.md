@@ -64,14 +64,40 @@ Inventory, player can collect collectibles which appears at the side of the scre
 
 #### Main character
 
+Run, jump, double jump, wall climb, shoot
+
+spawns, has health, takes damage from enemies with a knockback, reduces health.
+when health reaches zero dies.
+
+shoots projectiles at enemies
+collects collectibles, powerups
+
+followed by side-kick
+
+
 #### Side kick
 
+Flies around player, follows player, sometimes shoots at enemies.
+
 #### Enemies
+
+- Ground
+- Shooter
+- Flyer
+
+- Mimic
+  - Shadow mimic
+- Charger
+- Homing
 
 
 ### Story
 
+A character without a clear backstory, focused solely on the journey. In a lighthearted atmosphere
+
+
 Narrative, atmosphere, world building
+
 
 ## Short Summary
 
