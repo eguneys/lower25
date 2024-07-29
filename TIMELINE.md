@@ -51,6 +51,74 @@ Extra ideas:
 - An electric lighting is cast upon to kill all enemies in sight.
 - Homing missiles follow the player.
 - Elemental burst, release a burst of energy, (fire ice) to clear enemies near you.
+- Triple jump as a power-up
+- Gliding
+- Grappling hook
+- Jetpack
+
+### Enemy Types
+
+- Ground, slow mover, jumper
+- Shooter, shoots a projectile
+- Jumper, agile, jumper
+- Flyer, attack from above
+- Crawler, low to the ground, slow steady
+
+- Mimic, a decorative object that attacks when approached
+- Boomer, explodes on death
+- Charger, fast moving, rushes at player
+- Homing, a projectile, seeks out player
+
+- Parasite, a slow moving, attaches to player.
+- Shadow Stalker, dark, difficult to see.
+
+
+### Other NPCs
+
+- Companion guide, shows how to play like a tutorial, than tags along with the player.
+
+
+### Platforming
+
+- Rising and Falling Platforms, moves up and down
+- Oscillating Platforms, swings back and forth
+- Breakable Platforms, shatter when player jumps on them
+- Timed Platforms, sets on and off with a timer
+
+- Platforms with gaps,
+- Moving Spikes
+
+### Level Design
+
+- Level's Purpose, tutorial, challenge, exploration, boss battle
+
+- Theme and Atmosphere, visual style, audio design, enemy and character design
+
+- Level Structure
+  - Flow, clear path for the player to follow
+  - Pacing, balance challenging sections with easier ones.
+  - Variety, Mix up elements to keep hook
+  - Rhythm, Consider timing of obstacles and rewards.
+
+- Challenges and Rewards
+  - Obstacles
+  - Power Ups
+  - Collectibles
+  - Secrets
+
+### Mechanics
+
+- Combat System, how player interacts with enemies
+- Power-ups and Abilities, how special abilities changes gameplay
+- Player movement, how player moves, double jump, wall jump, dash etc.
+- Checkpoints and Saves, how player progress through the game
+- Inventory System, how player collect items.
+
+
+- Narrative, how is the story told?
+- Atmosphere, overall mood and tone 
+- World building, how world is created, presented
+
 
 
 ### Themes
@@ -72,13 +140,28 @@ Extra ideas:
 - City, cars, buildings
 - Inner buildings, offices, phones, people
 - Rainbows, unicorns, clouds, sky, sun
+- Post Acopalyptic Wasteland
+- Wild West
+- Robot rebellion
+- Medieval Knight, Castle
+- Ninja
+- Haunted House Horror
 
+
+
+## Things To Do
+
+### Pre Jam
 
 - Tools setup: engine, art, music
 - Brainstorming: Come up with game ideas and themes
 
 - Finalize concept: Decide on game's concept
+
 - Design document: Document main features, controls, objectives
+
+
+
 - Code
   - Project setup
   - Collision Detection
