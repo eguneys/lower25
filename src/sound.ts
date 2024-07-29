@@ -1,8 +1,15 @@
 import CPlayer from './audio-player'
 import { song1 } from './songs'
 
+export type SoundPlay = {
+  generate: () => Promise<void>,
+  play: (name: string, loop?: boolean) => (() => void) | undefined
+}
 
-export default function() {
+
+export default sound_play()
+
+function sound_play(): SoundPlay {
 
     let ctx = new AudioContext(),
         audioMaster = ctx.createGain();
@@ -53,25 +60,22 @@ export default function() {
         const buffer = sounds[name];
 
         if (!buffer) {
-            return null;
+            return undefined;
         }
 
         let source = ctx.createBufferSource(),
-            gainNode = ctx.createGain(),
-            panNode = ctx.createStereoPanner();
+            gainNode = ctx.createGain()
 
         source.buffer = buffer;
-        source.connect(panNode);
-        panNode.connect(gainNode);
+        source.connect(gainNode);
         gainNode.connect(audioMaster);
 
         source.loop = loop;
         gainNode.gain.value = 0.8;
         source.start();
-        return {
-            volume: gainNode,
-            sound: source
-        };
+        return () => {
+            source.stop()
+        }
     };
 
     return { generate, play: playSound }

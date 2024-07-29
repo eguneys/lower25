@@ -1,18 +1,15 @@
-import Sound from './sound'
+import Graphics from './graphics'
+import { SceneManager } from './scenes'
 
 
-function app(el: HTMLElement) {
+function my_app(el: HTMLElement) {
 
-  console.log(el)
-  let s = Sound()
+  let g = Graphics.make(320, 180, true)
 
+  el.appendChild(g.canvas)
 
-  s.generate().then(() => {
-    document.addEventListener('keypress', () => {
-      s.play('song', true)
-    })
-  })
+  SceneManager(g)
 }
 
 
-app(document.getElementById('app')!)
+my_app(document.getElementById('app')!)
