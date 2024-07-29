@@ -13,15 +13,15 @@ function load_image(path: string): Promise<HTMLImageElement> {
 }
 
 function decon(con: string) {
-  return con.split('\n\n\n').map(ntp => {
-    let [ name, _tags, _packs ] = ntp.split('\n\n')
+  return con.split(/\r?\n\r?\n\r?\n/).map(ntp => {
+    let [ name, _tags, _packs ] = ntp.split(/\r?\n\r?\n/)
 
-    let tags = _tags.split('\n').map(_ => {
+    let tags = _tags.split(/\r?\n/).map(_ => {
       let [from, to, name] = _.split('*')
       return { from: parseInt(from), to: parseInt(to), name }
     })
 
-    let packs = _packs.split('\n').map(_ => {
+    let packs = _packs.split(/\r?\n/).map(_ => {
       let [fx, fy, fw, fh, sx, sy, sw, sh] = mega_expand(_.split('*').map(_ => parseInt(_)))
       return { fx, fy, fw, fh, sx, sy, sw, sh }
     })
