@@ -60,6 +60,10 @@ Combat system, player shoots projectiles
 Abilities, player can jump, double jump, wall climb
 Inventory, player can collect collectibles which appears at the side of the screen to collect them all unlocks features.
 
+Camera
+
+Checkpoint system, each level has a spawn point, and a leave point. If a player dies at a level it restarts on the same level it died and 1 life is spent. Player has 3 lives, when run out, game restarts.
+
 ### Characters
 
 #### Main character
