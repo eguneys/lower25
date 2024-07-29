@@ -22,7 +22,7 @@ export function SceneManager(g: Graphics) {
 
         g.clear()
         g.fr(0, 0, 320, 180, '#fafafa')
-        g.fr(1, 1, 318, 178, '#0a0a0a')
+        g.fr(1, 1, 318, 178, '#1f1f1f')
         scene.draw(g)
     })
 }
@@ -54,7 +54,7 @@ class Scene extends Play {
                     this.song()
                     this.song = undefined
                 } else {
-                    this.song = a.play('song')
+                    this.song = a.play('song', true)
                 }
             }
         } else {
