@@ -77,11 +77,11 @@ type ContentInfo = {
 type N2 = [number, number]
 type LevelTile = { px: N2, src: N2 }
 
-type LevelInfo = {
+export type LevelInfo = {
   name: string,
   w: number,
   h: number,
-  te: LevelTile[][]
+  te: LevelTile[]
 }
 
 function decon_levels(levels: any): LevelInfo[] {
@@ -136,12 +136,16 @@ class Content {
 
   levels!: LevelInfo[]
 
+  tiles!: ContentPack
+
   async load() {
     this.image = await load_image(content_page0)
     this.info = decon(content_con0)
 
+    this.tiles = this.info.find(_ => _.name === 'tiles')!.packs[0]
+    console.log(this.info)
+
     this.levels = decon_levels(levels_json)
-    console.log(this.levels)
   }
 }
 

@@ -74,6 +74,17 @@ export default class Graphics {
     this.spr(dx, dy, sx, sy, sw, sh, scale_x, scale_y)
   }
 
+  tile(n: number, x: number, y: number) {
+    let { fx, fy, sx, sy, sw, sh } = Content.tiles
+
+    let dx = x - fx
+    let dy = y - fy
+
+    let nx = n % 80
+    let ny = Math.floor(n / 80)
+
+    this.spr(dx, dy, sx + nx, sy + ny, 8, 8)
+  }
 
   spr(dx: number, dy: number, sx: number, sy: number, sw: number, sh: number,
      scale_x: number = 1, scale_y: number = 1) {

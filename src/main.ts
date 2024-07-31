@@ -4,7 +4,7 @@ import { SceneManager } from './scenes'
 
 function my_app(el: HTMLElement) {
 
-  let g = make_graphics(320, 180, true)
+  let g = make_graphics(64, 64, true)
 
   el.appendChild(g.canvas)
 
