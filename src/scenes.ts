@@ -1,4 +1,4 @@
-import Content, { LevelInfo } from './content'
+import Content from './content'
 import Graphics from "./graphics"
 import Play, { Anim } from "./play"
 import i from "./input"
@@ -83,6 +83,7 @@ class MyScene extends Scene {
 
 }
 
+// @ts-ignore
 class AudioLoaded extends Scene {
 
     _init() {
