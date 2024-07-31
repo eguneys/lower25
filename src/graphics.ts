@@ -53,7 +53,7 @@ export default class Graphics {
   push_xy(x: number, y: number) {
     let { ctx } = this
     ctx.save()
-    ctx.translate(x, y)
+    ctx.translate(Math.floor(x), Math.floor(y))
   }
 
   pop() {
@@ -80,10 +80,10 @@ export default class Graphics {
     let dx = x - fx
     let dy = y - fy
 
-    let nx = n % 80
-    let ny = Math.floor(n / 80)
+    let nx = (n % 20) * 4
+    let ny = Math.floor(n / 20) * 4
 
-    this.spr(dx, dy, sx + nx, sy + ny, 8, 8)
+    this.spr(dx, dy, sx + nx, sy + ny, 4, 4)
   }
 
   spr(dx: number, dy: number, sx: number, sy: number, sw: number, sh: number,

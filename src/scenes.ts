@@ -3,7 +3,31 @@ import Graphics from "./graphics"
 import Play, { Anim } from "./play"
 import i from "./input"
 import a from './sound'
-import { my_loop } from "./time"
+import Time, { my_loop } from "./time"
+
+
+const max_dx = 8
+const _G = 4
+const jump_max_accel_y = 0.8
+const fall_max_accel_y = 3
+const max_dy = 4 * _G + 2 * fall_max_accel_y * _G
+const max_jump_dy = max_dy
+
+function appr(v: number, t: number, by: number) {
+    if (v < t) {
+        return Math.min(v + by, t)
+    } else if (v > t) {
+        return Math.max(v - by, t)
+    } else {
+        return v
+    }
+}
+
+
+/*
+const h_dist = (x: number, y: number) => Math.sqrt((Math.abs(x * x - y * y)))
+const fixed = (x: number) => Math.round(x)
+*/
 
 export function SceneManager(g: Graphics) {
 
@@ -110,26 +134,111 @@ class Intro extends Scene {
     }
 }
 
+abstract class HasPosition extends Play {
 
-class HasPosition extends Play {
+    w = 4
+    h = 4
 
-    x: number = 0
-    y: number = 0
+    grid!: MapLoader
+    dx = 0
+    dy = 0
+    x = 0
+    y = 0
+    collide_v = 0
+    collide_h = 0
+
+    pre_grounded = this.grounded
+
+    get ceiling() {
+        return this.collide_v < 0
+    }
+
+    get grounded() {
+        return this.collide_v > 0
+    }
+
+    get left_wall() {
+        return this.collide_h < 0
+    }
+
+    get right_wall() {
+        return this.collide_h > 0
+    }
 
     draw(g: Graphics) {
-        g.push_xy(this.x, this.y)
+        g.push_xy(Math.floor(this.x), Math.floor(this.y))
         super.draw(g)
         g.pop()
+    }
+
+    update() {
+        super.update()
+        this.pre_grounded = this.grounded
     }
 
 }
 
 class Player extends HasPosition {
+    w = 8
+    h = 8
+
+    _up_counter?: number = 0
 
     _init() {
         this.make(Anim, { name: 'main_char' })
     }
+
+    _update() {
+
+        let is_left = i('ArrowLeft') || i('a')
+        let is_right = i('ArrowRight') || i('d')
+        let is_up = i('ArrowUp') || i('w')
+
+        if (is_left) {
+            this.dx = -max_dx
+        } else if (is_right) {
+            this.dx = max_dx
+        } else {
+            this.dx = 0
+        }
+
+        if (is_up) {
+            if (this._up_counter !== undefined) {
+                this._up_counter += Time.dt
+            }
+        } else {
+            if (this._up_counter === undefined) {
+
+                this._up_counter = 0
+            } else if (this._up_counter > 0) {
+                this._up_counter = -0.3
+            }
+        }
+
+        if (this._up_counter !== undefined) {
+            if (this._up_counter < 0) {
+                this._up_counter += Time.dt
+                if (this._up_counter >= 0) {
+                    this._up_counter = undefined
+                }
+            }
+        }
+
+        if (this._up_counter !== undefined) {
+            if (this._up_counter > 0) {
+                if (this.grounded) {
+                    this.dy = -max_jump_dy
+                    this._up_counter = undefined
+                }
+            }
+        }
+    }
+
+    _post_update() {
+    }
 }
+
+type XYWH = { x: number, y: number, w: number, h: number }
 
 class MapLoader extends Play {
 
@@ -137,6 +246,44 @@ class MapLoader extends Play {
     cam_x: number = 0
     cam_y: number = 0
 
+    cam_zone_x: number = this.cam_x
+    cam_zone_y: number = this.cam_y
+
+    get world_width_px() {
+        return this.tiles[0].length * 4
+    }
+
+    is_solid_xywh(xywh: XYWH, dx: number, dy: number) {
+        let { x, y, w, h } = xywh
+
+        return this.is_solid_rect(x - w / 2 + dx, y - h / 2 + dy, w, h)
+    }
+
+    is_solid_rect(x: number, y: number, w = 1, h = 1) {
+
+        let grid_width = this.tiles[0].length
+        let grid_height = this.tiles.length
+
+        let grid_x = x / 4
+        let grid_y = y / 4
+        let grid_end_x = (x + w - 1) / 4
+        let grid_end_y = (y + h - 1) / 4
+
+        if (grid_x < 0 || grid_end_x >= grid_width || grid_y < 0 || grid_end_y >= grid_height) {
+            return true
+        }
+
+        for (x = grid_x; x <= grid_end_x; x++) {
+            for (y = grid_y; y <= grid_end_y; y++) {
+                x = Math.floor(x)
+                y = Math.floor(y)
+                if (is_solid_n(this.tiles[y][x])) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
 
     _init() {
 
@@ -150,16 +297,12 @@ class MapLoader extends Play {
         for (let i = 0; i < l.te.length; i++) {
             let { px, src } = l.te[i]
 
-            let x = px[0] / 8
-            let y = px[1] / 8
+            let x = px[0] / 4
+            let y = px[1] / 4
 
-            let i_src = (src[1] / 8) * 10 + (src[0] / 8)
+            let i_src = (src[1] / 4) * 20 + (src[0] / 4)
 
-            if (i_src === 99) {
-                this.cam_x = px[0] - 32
-                this.cam_y = px[1] - 32
-
-
+            if (i_src === 399) {
                 let p = this.make(Player)
                 p.x = px[0]
                 p.y = px[1]
@@ -170,6 +313,112 @@ class MapLoader extends Play {
         }
     }
 
+    _update() {
+
+
+        let bodies = this.objects.filter(_ => _ instanceof HasPosition)
+
+        bodies.forEach(body => {
+
+            let G = _G
+            let decrease_g = 0
+
+            {
+                let dy = Math.abs(body.dy)
+                let sign = Math.sign(body.dy)
+
+
+                for (let di = 0; di < dy; di += 1) {
+                    let dyy = 1 / 2 * sign * Math.sqrt(Time.dt)
+                    if (this.is_solid_xywh(body, 0, dyy)) {
+                        body.collide_v = sign
+                        body.dy /= 2
+                        decrease_g = 0
+                        break
+                    } else {
+                        console.log('ok', body.y + dyy)
+                        body.collide_v = 0
+                        body.y += dyy;
+
+                        decrease_g = (1 - sign * (di / dy))
+
+                        {
+                            let dii = jump_max_accel_y * G * Math.sqrt(decrease_g)
+                            let sign = 1
+
+                            body.dy += sign * dii * Time.dt
+                        }
+                    }
+                }
+            }
+
+            {
+
+                let dy = fall_max_accel_y * G
+                let sign = 1
+
+                for (let di = 0; di < dy; di += 1) {
+                    let dyy = 1 / 2 * sign * Math.sqrt(Time.dt)
+                    if (this.is_solid_xywh(body, 0, dyy)) {
+                        body.collide_v = sign
+                        body.dy = 0
+                        break
+                    } else {
+                        body.collide_v = 0
+                        body.y += dyy
+                    }
+                }
+            }
+
+
+
+            {
+                let dx = Math.abs(body.dx)
+                let sign = Math.sign(body.dx)
+                let h_accel = 1
+
+                for (let di = 0; di < dx; di += 1) {
+                    let dxx = 1 / 2 * sign * Math.sqrt(Time.dt) * h_accel
+                    if (this.is_solid_xywh(body, dxx, 0)) {
+                        body.collide_h = sign
+                        body.dx = 0
+                        break
+                    } else {
+                        body.collide_h = 0
+                        body.x += dxx
+                    }
+                }
+            }
+
+        })
+
+
+
+
+
+
+
+        let p = this.one(Player)
+        if (p) {
+            if (this.cam_zone_x < (p.x - 4) - 10) {
+                this.cam_zone_x = (p.x - 4) - 10
+            }
+            if (this.cam_zone_x > (p.x + 4) + 10) {
+                this.cam_zone_x = (p.x + 4) + 10
+            }
+            if (this.cam_zone_y < p.y - 20) {
+                this.cam_zone_y = p.y - 20
+            }
+            if (this.cam_zone_y > p.y + 20) {
+                this.cam_zone_y = p.y + 20
+            }
+        }
+
+        this.cam_x = appr(this.cam_x, this.cam_zone_x - 32, 40 * Time.dt)
+        this.cam_y = this.cam_zone_y - 32
+
+        this.cam_x = Math.min(Math.max(0, this.cam_x), this.world_width_px)
+    }
 
     _pre_draw(g: Graphics) {
 
@@ -179,7 +428,7 @@ class MapLoader extends Play {
             let col = this.tiles[i]
             for (let j = 0; j < col.length; j++) {
                 let n = col[j]
-                g.tile(n, j * 8, i * 8)
+                g.tile(n, j * 4, i * 4)
             }
         }
     }
@@ -188,3 +437,7 @@ class MapLoader extends Play {
         g.pop()
     }
 }
+
+
+const solid_tiles = [0, 1, 2]
+const is_solid_n = (n: number) => solid_tiles.includes(n)

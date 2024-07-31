@@ -39,8 +39,8 @@ function mega_expand(v: number[]) {
 
   let x = 0,
     y = 0,
-    [w, h] = (wh === 0 ? [16, 16] :
-              (wh === 1 ? [32,16] :
+    [w, h] = (wh === 0 ? [8, 8] :
+              (wh === 1 ? [16,16] :
                (wh === 2 ? [80,80] :
                 (wh === 4 ? [80, 30] :
                  [0, 0]))))
@@ -100,7 +100,7 @@ function decon_levels(levels: any): LevelInfo[] {
     function decode_src(a: number) {
       let x = a % 1024
       let y = Math.floor(a / 1024)
-      return [x * 8, y * 8]
+      return [x * 4, y * 4]
     }
 
     let res = []

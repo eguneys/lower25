@@ -90,8 +90,8 @@ function mega_shrink(v) {
   // pw,ph = w,h
   // px,py = px,py
 
-  let code_wh = (w === 16 ? 0 : 
-    (w === 32 ? 1 :
+  let code_wh = (w === 8 ? 0 : 
+    (w === 16 ? 1 :
     (w === 80 ? (h === 30 ? 4 : 2) : 3)))
   return [code_wh,px,py]
 }

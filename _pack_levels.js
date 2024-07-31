@@ -44,11 +44,11 @@ function extract_levels_ldtk({ name, json }) {
 
 function condensed(json) {
     function encode_i_src([x, y]) {
-        return (y / 8) * 1024 + (x / 8)
+        return (y / 4) * 1024 + (x / 4)
     }
 
     function encode_px([x, y]) {
-        return (y / 8) * 1024 + (x / 8)
+        return (y / 4) * 1024 + (x / 4)
     }
 
     let { levels } = json
