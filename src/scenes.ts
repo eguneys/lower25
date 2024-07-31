@@ -1,4 +1,4 @@
-import Content from './content'
+import Content, { LevelInfo } from './content'
 import Graphics from "./graphics"
 import Play, { Anim } from "./play"
 import i from "./input"
@@ -21,8 +21,8 @@ export function SceneManager(g: Graphics) {
         scene.update()
 
         g.clear()
-        g.fr(0, 0, 320, 180, '#fafafa')
-        g.fr(1, 1, 318, 178, '#1f1f1f')
+        g.fr(0, 0, 64, 64, '#1a001a')
+        g.fr(1, 1, 62, 62, '#1f0f1f')
         scene.draw(g)
     })
 }
@@ -71,11 +71,12 @@ class MyScene extends Scene {
 
     Content.load().then(() => {
         let _ = this.make(Anim, { name: 'loading', tag: 'audio', duration: 1000 })
-        _.x = 320 / 2
-        _.y = 180 / 2
+        _.x = 32
+        _.y = 32
 
         a.generate().then(() => {
-            this.go(AudioLoaded)
+           // this.go(AudioLoaded)
+           this.go(Intro)
         })
     })
   }
@@ -94,8 +95,8 @@ class AudioLoaded extends Scene {
         document.addEventListener('keydown', init)
 
         let _ = this.make(Anim, { name: 'loading', tag: 'input', duration: 1000 })
-        _.x = 260
-        _.y = 160
+        _.x = 30
+        _.y = 50
     }
 }
 
@@ -103,6 +104,86 @@ class AudioLoaded extends Scene {
 class Intro extends Scene {
 
     _init() {
-        this.song = a.play('song', true)
+        //this.song = a.play('song', true)
+        this.make(MapLoader)
+    }
+}
+
+
+class HasPosition extends Play {
+
+    x: number = 0
+    y: number = 0
+
+    draw(g: Graphics) {
+        g.push_xy(this.x, this.y)
+        super.draw(g)
+        g.pop()
+    }
+
+}
+
+class Player extends HasPosition {
+
+    _init() {
+        this.make(Anim, { name: 'main_char' })
+    }
+}
+
+class MapLoader extends Play {
+
+    tiles!: number[][]
+    cam_x: number = 0
+    cam_y: number = 0
+
+
+    _init() {
+
+        let l = Content.levels[0]
+
+        this.tiles = []
+        for (let i = 0; i < l.h; i++) {
+            this.tiles[i] = Array(l.w)
+        }
+
+        for (let i = 0; i < l.te.length; i++) {
+            let { px, src } = l.te[i]
+
+            let x = px[0] / 8
+            let y = px[1] / 8
+
+            let i_src = (src[1] / 8) * 10 + (src[0] / 8)
+
+            if (i_src === 99) {
+                this.cam_x = px[0] - 32
+                this.cam_y = px[1] - 32
+
+
+                let p = this.make(Player)
+                p.x = px[0]
+                p.y = px[1]
+
+            } else {
+              this.tiles[y][x] = i_src
+            }
+        }
+    }
+
+
+    _pre_draw(g: Graphics) {
+
+        g.push_xy(-this.cam_x, -this.cam_y)
+
+        for (let i = 0; i < this.tiles.length; i++) {
+            let col = this.tiles[i]
+            for (let j = 0; j < col.length; j++) {
+                let n = col[j]
+                g.tile(n, j * 8, i * 8)
+            }
+        }
+    }
+
+    _draw(g: Graphics) {
+        g.pop()
     }
 }
