@@ -75,7 +75,7 @@ export default class Graphics {
   }
 
   tile(n: number, x: number, y: number) {
-    let { fx, fy, sx, sy, sw, sh } = Content.tiles
+    let { fx, fy, sx, sy } = Content.tiles
 
     let dx = x - fx
     let dy = y - fy
