@@ -154,6 +154,10 @@ abstract class HasPosition extends Play {
     ledge_grab?: number
     knoll_climb?: number
 
+    get facing() {
+        return Math.sign(this.dx)
+    }
+
     get ceiling() {
         return this.collide_v < 0
     }
@@ -221,8 +225,10 @@ class Player extends HasPosition {
     is_left = false
     is_right = false
 
+    anim!: Anim
+
     _init() {
-        this.make(Anim, { name: 'main_char' })
+        this.anim = this.make(Anim, { name: 'main_char' })
     }
 
     _update() {
@@ -298,6 +304,20 @@ class Player extends HasPosition {
                 if (this._ground_counter === 0) {
                     this._ground_counter = undefined
                 }
+            }
+        }
+
+        if (this.grounded) {
+            if (this.dx !== 0) {
+                this.anim.play_tag('run')
+                this.anim.scale_x = this.facing
+            } else {
+                this.anim.play_tag('idle')
+            }
+        } else {
+            this.anim.play_tag('jump')
+            if (this.facing !== 0) {
+               this.anim.scale_x = this.facing
             }
         }
     }

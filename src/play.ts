@@ -166,7 +166,7 @@ export class Anim extends Play {
     return this.data.name
   }
 
-  private get _tag() {
+  get _tag() {
     return this.data.tag || 'idle'
   }
 
@@ -219,6 +219,9 @@ export class Anim extends Play {
   }
 
   play_tag(tag: string) {
+    if (this.data.tag === tag) {
+      return
+    }
     this.data.tag = tag
     this._current_frame = 0
 
