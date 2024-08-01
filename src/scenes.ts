@@ -136,6 +136,8 @@ class Intro extends Scene {
 
 abstract class HasPosition extends Play {
 
+    _g_scale = 1
+
     w = 4
     h = 4
 
@@ -148,6 +150,9 @@ abstract class HasPosition extends Play {
     collide_h = 0
 
     pre_grounded = this.grounded
+
+    ledge_grab?: number
+    knoll_climb?: number
 
     get ceiling() {
         return this.collide_v < 0
@@ -175,14 +180,46 @@ abstract class HasPosition extends Play {
         super.update()
         this.pre_grounded = this.grounded
     }
+}
 
+type FxData = {
+    duration?: number,
+    name: string
+}
+
+class Fx extends HasPosition {
+
+    _g_scale = 0
+
+    get data() {
+        return this._data as FxData
+    }
+
+    get duration() {
+        return this.data.duration ?? 1
+    }
+
+    _init() {
+        this.make(Anim, { name: this.data.name })
+    }
+
+    _update() {
+        if (this.life > this.duration) {
+            this.remove()
+        }
+    }
 }
 
 class Player extends HasPosition {
     w = 8
     h = 8
 
+    _double_jump_left = 2
     _up_counter?: number = 0
+    _ground_counter?: number
+
+    is_left = false
+    is_right = false
 
     _init() {
         this.make(Anim, { name: 'main_char' })
@@ -193,6 +230,9 @@ class Player extends HasPosition {
         let is_left = i('ArrowLeft') || i('a')
         let is_right = i('ArrowRight') || i('d')
         let is_up = i('ArrowUp') || i('w')
+
+        this.is_left = is_left
+        this.is_right = is_right
 
         if (is_left) {
             this.dx = -max_dx
@@ -226,9 +266,37 @@ class Player extends HasPosition {
 
         if (this._up_counter !== undefined) {
             if (this._up_counter > 0) {
-                if (this.grounded) {
+                if (this._ground_counter !== undefined) {
                     this.dy = -max_jump_dy
                     this._up_counter = undefined
+                    this._double_jump_left = 1
+                } else if (this._double_jump_left > 0) {
+                    this.dy = -max_jump_dy
+                    this._up_counter = undefined
+                    this._double_jump_left = 0
+
+                    let _ = this.parent!.make(Fx, { name: 'fx_djump', duration: 0.4 })
+                    _.x = this.x
+                    _.y = this.y + 5
+                }
+            }
+        }
+
+
+        if (this.grounded) {
+            this._ground_counter = 0
+        } else {
+            if (this.pre_grounded) {
+                this._ground_counter = .16
+            }
+        }
+
+        if (this._ground_counter !== undefined) {
+            if (this._ground_counter > 0) {
+                this._ground_counter = appr(this._ground_counter, 0, Time.dt)
+
+                if (this._ground_counter === 0) {
+                    this._ground_counter = undefined
                 }
             }
         }
@@ -254,6 +322,10 @@ class MapLoader extends Play {
     }
 
     is_solid_xywh(xywh: XYWH, dx: number, dy: number) {
+        return !!this.get_solid_xywh(xywh, dx, dy)
+    }
+
+    get_solid_xywh(xywh: XYWH, dx: number, dy: number) {
         let { x, y, w, h } = xywh
 
         return this.is_solid_rect(x - w / 2 + dx, y - h / 2 + dy, w, h)
@@ -278,11 +350,11 @@ class MapLoader extends Play {
                 x = Math.floor(x)
                 y = Math.floor(y)
                 if (is_solid_n(this.tiles[y][x])) {
-                    return true
+                    return [x * 4, y * 4]
                 }
             }
         }
-        return false
+        return undefined
     }
 
     _init() {
@@ -315,12 +387,78 @@ class MapLoader extends Play {
 
     _update() {
 
+        let p = this.one(Player)!
+
+        if (p.ledge_grab === undefined) {
+            let down_solid = this.is_solid_xywh(p, 0, 2)
+            let r_solid = this.get_solid_xywh(p, 1, 0)
+            let l_solid = this.get_solid_xywh(p, -1, 0)
+
+            // ledge grap
+            if (!down_solid) {
+                if (p.is_right && Array.isArray(r_solid)) {
+                    p.ledge_grab = .2
+                    p.x = r_solid[0]
+                    p.y = r_solid[1]
+                } else if (p.is_left && Array.isArray(l_solid)) {
+                    p.ledge_grab = -.2
+                    p.x = l_solid[0] + 4
+                    p.y = l_solid[1]
+                }
+            }
+        } 
+
+        if (!p.ledge_grab && p.knoll_climb === undefined) {
+            let r_knoll =  !this.get_solid_xywh(p, 1, -4) ? this.get_solid_xywh(p, 1, 0) : undefined
+            let l_knoll =  !this.get_solid_xywh(p, -1, -4) ? this.get_solid_xywh(p, -1, 0) : undefined
+
+            if (p.is_right && Array.isArray(r_knoll)) {
+                p.knoll_climb = .16
+                p.x = r_knoll[0]
+                p.y = r_knoll[1] - 1
+            } else if (p.is_left && Array.isArray(l_knoll)) {
+                p.knoll_climb = -.16
+                p.x = l_knoll[0] + 4
+                p.y = l_knoll[1] - 1
+            }
+        }
+
+
 
         let bodies = this.objects.filter(_ => _ instanceof HasPosition)
 
         bodies.forEach(body => {
 
-            let G = _G
+            let s = this.get_solid_xywh(body, 0, 0) as [number, number]
+
+            if (body.ledge_grab !== undefined) {
+                body.ledge_grab = appr(body.ledge_grab, 0, Time.dt)
+
+
+                if (body.ledge_grab === 0) {
+                    body.ledge_grab = undefined
+
+
+                    body.y = s[1] - 4
+                    body.dy = 0
+                }
+                return
+            }
+
+            if (body.knoll_climb !== undefined) {
+                body.knoll_climb = appr(body.knoll_climb, 0, Time.dt)
+
+                if (body.knoll_climb === 0) {
+                    body.knoll_climb = undefined
+
+                    body.y = s[1] - 4
+                    body.dy = 0
+
+                }
+                return
+            }
+
+            let G = _G * body._g_scale
             let decrease_g = 0
 
             {
@@ -336,7 +474,6 @@ class MapLoader extends Play {
                         decrease_g = 0
                         break
                     } else {
-                        console.log('ok', body.y + dyy)
                         body.collide_v = 0
                         body.y += dyy;
 
@@ -393,12 +530,6 @@ class MapLoader extends Play {
         })
 
 
-
-
-
-
-
-        let p = this.one(Player)
         if (p) {
             if (this.cam_zone_x < (p.x - 4) - 10) {
                 this.cam_zone_x = (p.x - 4) - 10

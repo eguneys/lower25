@@ -11,6 +11,7 @@ export default abstract class Play {
     return this
   }
 
+  parent?: Play
   life!: number
   objects: Play[]
   pools: [Play, number][]
@@ -40,6 +41,7 @@ export default abstract class Play {
 
   _make<T extends Play>(ctor: { new (): T }, data: any) {
     let res = new ctor()._set_data(data).init()
+    res.parent = this
     return res
   }
 
@@ -57,7 +59,11 @@ export default abstract class Play {
     return res
   }
 
-  remove(p: Play) {
+  remove(p?: Play) {
+    if (!p) {
+      this.parent?.remove(this)
+      return
+    }
     let i = this.objects.indexOf(p)
     if (i === -1) {
       throw 'noscene rm'

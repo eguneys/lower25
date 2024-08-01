@@ -1,3 +1,11 @@
+fx_djump
+
+0*1*idle
+
+0*80*216
+0*88*216
+
+
 loading
 
 0*1*audio
@@ -14,7 +22,7 @@ main_char
 
 0*0*idle
 
-0*80*216
+0*96*216
 
 
 npc
