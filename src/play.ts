@@ -11,6 +11,7 @@ export default abstract class Play {
     return this
   }
 
+  visible = true
   parent?: Play
   life!: number
   objects: Play[]
@@ -86,6 +87,9 @@ export default abstract class Play {
   }
 
   update() {
+    if (!this.visible) {
+      return
+    }
     if (this.life === 0) {
       this._first_update()
     }
@@ -113,6 +117,9 @@ export default abstract class Play {
   }
 
   draw(graphics: Graphics) {
+    if (!this.visible) {
+      return
+    }
     this._pre_draw(graphics)
     this.objects.forEach(_ => _.draw(graphics))
     this._draw(graphics)
@@ -133,7 +140,8 @@ export type AnimData = {
   name: string,
   tag?: string,
   s_origin?: SOrigin,
-  duration?: number
+  duration?: number,
+  loop?: boolean
 }
 
 export class Anim extends Play {
@@ -247,7 +255,9 @@ export class Anim extends Play {
       this.__elapsed -= duration_single_frame
 
       if (this._current_frame === d_from_to) {
-        this._current_frame = 0
+        if (this.data.loop !== false)  {
+           this._current_frame = 0
+        }
       } else {
         this._current_frame += 1
       }

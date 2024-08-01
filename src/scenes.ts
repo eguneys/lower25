@@ -186,6 +186,7 @@ abstract class HasPosition extends Play {
 
     anim!: Anim
 
+    is_solid = true
     _g_scale = 1
 
     d_accel_y = jump_max_accel_y
@@ -286,11 +287,35 @@ class Coin extends Collectible {
     _g_scale = 0
     d_accel_y = jump_max_accel_y * 80
 
+    t_vanish?: number
+
     _init() {
         this.anim = this.make(Anim, { name: 'collect', tag: 'coin', duration: 800 })
     }
 
     _update() {
+
+        if (this.t_vanish !== undefined) {
+            this.t_vanish = appr(this.t_vanish, 0, Time.dt)
+
+            if (this.t_vanish < 2) {
+                if (Time.on_interval(.3)) {
+                    if (this.visible) {
+                        this.visible = false
+                    }
+                } else {
+                    if (Time.on_interval(.2)) {
+                        if (!this.visible) {
+                            this.visible = true
+                        }
+                    }
+                }
+            }
+
+            if (this.t_vanish === 0) {
+                this.remove()
+            }
+        }
 
         if (this.t_collect !== undefined) {
             this.t_collect = appr(this.t_collect, 0, Time.dt)
@@ -326,14 +351,20 @@ class Crawler extends CrushOnCollide {
 
 
     _update() {
-        if (this.collide_h !== 0) {
-            this.dx = - this.collide_h
-        }
-
         this.anim.scale_x = this.facing
     }
 
 
+}
+
+class PlayerDie extends HasPosition {
+
+    _g_scale = 0
+    is_solid = false
+
+    _init() {
+        this.make(Anim, { name: 'main_char', tag: 'die', loop: false })
+    }
 }
 
 class Player extends HasPosition {
@@ -517,7 +548,7 @@ type XYWH = { x: number, y: number, w: number, h: number }
 class MapLoader extends Play {
 
     get ui() {
-        return this.parent!.one(UI)
+        return this.parent!.one(UI)!
     }
 
     tiles!: number[][]
@@ -605,25 +636,44 @@ class MapLoader extends Play {
     _update() {
 
         let p = this.one(Player)!
-
-        let collects = this.objects.filter(_ => _ instanceof Collectible)
-
-        collects.forEach(crush => {
-            if (crush.t_collect === undefined && collide_rect(crush, p)) {
-                crush.t_collect = .3
-                crush.dy = -8
-
-                this.ui?.bump()
-            }
+        let crawlers = this.many(Crawler)
+        crawlers.forEach(crawl => {
+            if (this.is_solid_xywh(crawl, Math.sign(crawl.dx), 0) || 
+                !this.is_solid_xywh(crawl, Math.sign(crawl.dx) * 4, 1)) {
+                    crawl.dx *= -1
+                }
         })
 
 
-
         if (p.t_knockback === 0) {
+
+
+            let collects = this.objects.filter(_ => _ instanceof Collectible)
+
+            collects.forEach(crush => {
+                if (crush.t_collect === undefined && collide_rect(crush, p)) {
+                    crush.t_collect = .3
+                    crush.dy = -8
+
+                    this.ui?.bump()
+                }
+            })
+
+
+
             let crushes = this.objects.filter(_ => _ instanceof CrushOnCollide)
 
             crushes.forEach(crush => {
                 if (collide_rect(crush.hitbox, p.hitbox)) {
+
+                    if (this.ui.width === 0) {
+                        p.visible = false
+                        let _ = this.make(PlayerDie)
+                        _.x = p.x
+                        _.y = p.y
+                    }
+
+
                     p.make(Fx, { name: 'fx_flash' })
 
                     p.t_knockback = 1
@@ -633,6 +683,15 @@ class MapLoader extends Play {
                     } else {
                         p.dx = - Math.sign(p.dx) * max_dx * 0.8
                     }
+                    for (let i = 0; i< this.ui.width; i++) {
+                        let _ = this.make(Coin)
+                        _.x = p.x
+                        _.y = p.y
+                        _.dx = Math.sin((i / this.ui.width) * Math.PI * 2) * 8
+                        _.dy = Math.cos((i / this.ui.width) * Math.PI * 2) * 80
+                        _.t_vanish = 3
+                    }
+                    this.ui.width = 0
                 }
             })
         }
@@ -788,11 +847,11 @@ class MapLoader extends Play {
             if (this.cam_zone_x > (p.x + 4) + 1) {
                 this.cam_zone_x = (p.x + 4) + 1
             }
-            if (this.cam_zone_y < p.y - 20) {
-                this.cam_zone_y = p.y - 20
+            if (this.cam_zone_y < p.y - 8) {
+                this.cam_zone_y = p.y - 8
             }
-            if (this.cam_zone_y > p.y + 20) {
-                this.cam_zone_y = p.y + 20
+            if (this.cam_zone_y > p.y + 8) {
+                this.cam_zone_y = p.y + 8
             }
         }
 
