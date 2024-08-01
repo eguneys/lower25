@@ -780,5 +780,5 @@ class MapLoader extends Play {
 }
 
 
-const solid_tiles = [0, 1, 2, 20, 21, 22, 40, 41, 42]
+const solid_tiles = [0, 1, 2, 3, 4, 5, 20, 21, 22, 23, 24, 40, 41, 42, 44, 60, 61, 62, 63, 64, 80, 81, 82, 83]
 const is_solid_n = (n: number) => solid_tiles.includes(n)
