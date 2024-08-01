@@ -137,6 +137,44 @@ class Intro extends Scene {
     _init() {
         //this.song = a.play('song', true)
         this.make(MapLoader)
+        this.make(UI)
+    }
+}
+
+
+class UI extends Play {
+
+    width = 0
+    t_width = 0
+
+    bump() {
+        this.t_width = .9
+    }
+
+    _init(){
+
+        let _ = this.make(Anim, { name: 'collect', tag: 'coin' })
+        _.x = 3
+        _.y = 3
+    }
+    
+    _update() {
+        if (this.t_width > 0) {
+
+          this.t_width = appr(this.t_width, 0, Time.dt * 3)
+          if (this.t_width < 0.5) {
+            this.width++
+            this.t_width = 0
+          }
+        }
+    }
+
+    _draw(g: Graphics) {
+        g.fr(6, 1, 54, 1, '#f7ffff')
+        g.fr(6, 2, this.width, 2, '#b4d800')
+
+        let bump_width = (this.t_width / .9) * 1
+        g.fr(6 + this.width, 2, bump_width, 2, '#f59562')
     }
 }
 
@@ -260,7 +298,7 @@ class Coin extends Collectible {
             this.anim.duration = 160
 
             if (this.t_collect === 0) {
-                let _ = this.parent!.make(Fx, { name: 'fx_collect' })
+                let _ = this.parent!.make(Fx, { name: 'fx_collect', duration: .3 })
                 _.x = this.x
                 _.y = this.y
 
@@ -478,6 +516,10 @@ type XYWH = { x: number, y: number, w: number, h: number }
 
 class MapLoader extends Play {
 
+    get ui() {
+        return this.parent!.one(UI)
+    }
+
     tiles!: number[][]
     cam_x: number = 0
     cam_y: number = 0
@@ -570,6 +612,8 @@ class MapLoader extends Play {
             if (crush.t_collect === undefined && collide_rect(crush, p)) {
                 crush.t_collect = .3
                 crush.dy = -8
+
+                this.ui?.bump()
             }
         })
 
