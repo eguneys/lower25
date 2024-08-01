@@ -154,6 +154,10 @@ export class Anim extends Play {
     return this.data.duration ?? 400
   }
 
+  set duration(d: number) {
+    this.data.duration = d
+  }
+
   private get tag() {
     let res = this.info.tags.find(_ => _.name === this._tag)
     if (!res) {

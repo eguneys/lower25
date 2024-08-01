@@ -146,10 +146,11 @@ abstract class HasPosition extends Play {
         return { x: this.x, y: this.y, w: this.w / 2, h: this.h / 2}
     }
 
-
     anim!: Anim
 
     _g_scale = 1
+
+    d_accel_y = jump_max_accel_y
 
     w = 4
     h = 4
@@ -236,6 +237,42 @@ class Crash extends Fx {
     }
 }
 
+
+class Collectible extends HasPosition {
+
+    t_collect?: number
+
+}
+
+class Coin extends Collectible {
+    _g_scale = 0
+    d_accel_y = jump_max_accel_y * 80
+
+    _init() {
+        this.anim = this.make(Anim, { name: 'collect', tag: 'coin', duration: 800 })
+    }
+
+    _update() {
+
+        if (this.t_collect !== undefined) {
+            this.t_collect = appr(this.t_collect, 0, Time.dt)
+
+            this.anim.duration = 160
+
+            if (this.t_collect === 0) {
+                let _ = this.parent!.make(Fx, { name: 'fx_collect' })
+                _.x = this.x
+                _.y = this.y
+
+                this.remove()
+            }
+
+        } else {
+            this.dy = Math.sin(this.life * 3)
+        }
+    }
+
+}
 
 class CrushOnCollide extends HasPosition {}
 
@@ -384,6 +421,7 @@ class Player extends HasPosition {
             let _ = this.parent!.pool(Bullet, { dx: this.dx, dy: 10 })
             _.x = this.x
             _.y = this.y
+            this.dx *= -6
             this._shoot_cool = .2
         }
         this._shoot_cool = appr(this._shoot_cool, 0, Time.dt)
@@ -512,6 +550,10 @@ class MapLoader extends Play {
                 let c = this.make(Crawler)
                 c.x = px[0]
                 c.y = px[1]
+            } else if (i_src === 397) {
+                let c = this.make(Coin)
+                c.x = px[0]
+                c.y = px[1]
             } else {
               this.tiles[y][x] = i_src
             }
@@ -522,6 +564,14 @@ class MapLoader extends Play {
 
         let p = this.one(Player)!
 
+        let collects = this.objects.filter(_ => _ instanceof Collectible)
+
+        collects.forEach(crush => {
+            if (crush.t_collect === undefined && collide_rect(crush, p)) {
+                crush.t_collect = .3
+                crush.dy = -8
+            }
+        })
 
 
 
@@ -548,8 +598,8 @@ class MapLoader extends Play {
 
         if (p.ledge_grab === undefined) {
             let down_solid = this.is_solid_xywh(p, 0, 2)
-            let r_solid = this.get_solid_xywh(p, 1, 0)
-            let l_solid = this.get_solid_xywh(p, -1, 0)
+            let r_solid = !this.get_solid_xywh(p, 1, -1) ? this.get_solid_xywh(p, 1, 0) : undefined
+            let l_solid = !this.get_solid_xywh(p, -1, -1) ? this.get_solid_xywh(p, -1, 0) : undefined
 
             // ledge grap
             if (!down_solid) {
@@ -637,7 +687,7 @@ class MapLoader extends Play {
                         decrease_g = (1 - sign * (di / dy))
 
                         {
-                            let dii = jump_max_accel_y * G * Math.sqrt(decrease_g)
+                            let dii = body.d_accel_y * G * Math.sqrt(decrease_g)
                             let sign = 1
 
                             body.dy += sign * dii * Time.dt
