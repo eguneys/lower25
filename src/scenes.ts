@@ -51,8 +51,8 @@ export function SceneManager(g: Graphics) {
         scene.update()
 
         g.clear()
-        g.fr(0, 0, 64, 64, '#1a001a')
-        g.fr(1, 1, 62, 62, '#1f0f1f')
+        g.fr(0, 0, 64, 64, 'hsl(20, 5%, 50%)')
+        g.fr(1, 1, 62, 62, 'hsl(70, 15%, 30%)')
         scene.draw(g)
     })
 }
@@ -688,11 +688,11 @@ class MapLoader extends Play {
 
 
         if (p) {
-            if (this.cam_zone_x < (p.x - 4) - 10) {
-                this.cam_zone_x = (p.x - 4) - 10
+            if (this.cam_zone_x < (p.x - 4) - 1) {
+                this.cam_zone_x = (p.x - 4) - 1 
             }
-            if (this.cam_zone_x > (p.x + 4) + 10) {
-                this.cam_zone_x = (p.x + 4) + 10
+            if (this.cam_zone_x > (p.x + 4) + 1) {
+                this.cam_zone_x = (p.x + 4) + 1
             }
             if (this.cam_zone_y < p.y - 20) {
                 this.cam_zone_y = p.y - 20
@@ -702,7 +702,8 @@ class MapLoader extends Play {
             }
         }
 
-        this.cam_x = appr(this.cam_x, this.cam_zone_x - 32, 40 * Time.dt)
+        let show_more = p.dx < 0 ? -50 : p.dx > 0 ? -10 : -32
+        this.cam_x = appr(this.cam_x, this.cam_zone_x + show_more, 50 * Time.dt)
         this.cam_y = this.cam_zone_y - 32
 
         this.cam_x = Math.min(Math.max(0, this.cam_x), this.world_width_px)
