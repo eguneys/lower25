@@ -23,6 +23,12 @@ function appr(v: number, t: number, by: number) {
     }
 }
 
+function collide_rect(a: XYWH, b: XYWH) {
+    return a.x < b.x + b.w &&
+    a.x + a.w > b.x &&
+    a.y < b.y + b.h &&
+    a.y + a.h > b.y
+}
 
 /*
 const h_dist = (x: number, y: number) => Math.sqrt((Math.abs(x * x - y * y)))
@@ -136,6 +142,11 @@ class Intro extends Scene {
 
 abstract class HasPosition extends Play {
 
+    get hitbox() {
+        return { x: this.x, y: this.y, w: this.w / 2, h: this.h / 2}
+    }
+
+
     anim!: Anim
 
     _g_scale = 1
@@ -225,9 +236,36 @@ class Crash extends Fx {
     }
 }
 
+
+class CrushOnCollide extends HasPosition {}
+
+class Crawler extends CrushOnCollide {
+    w = 8
+    h = 8
+
+    _init() {
+        this.anim = this.make(Anim, { name: 'crawler' })
+
+        this.dx = 1.2
+    }
+
+
+    _update() {
+        if (this.collide_h !== 0) {
+            this.dx = - this.collide_h
+        }
+
+        this.anim.scale_x = this.facing
+    }
+
+
+}
+
 class Player extends HasPosition {
     w = 8
     h = 8
+
+    t_knockback = 0
 
     _shoot_cool = 0
 
@@ -243,6 +281,12 @@ class Player extends HasPosition {
     }
 
     _update() {
+
+        if (this.t_knockback > 0) {
+            this.t_knockback = appr(this.t_knockback, 0, Time.dt)
+
+            return
+        }
 
         let is_shoot = i('x')
 
@@ -464,7 +508,10 @@ class MapLoader extends Play {
                 let p = this.make(Player)
                 p.x = px[0]
                 p.y = px[1]
-
+            } else if (i_src === 398) {
+                let c = this.make(Crawler)
+                c.x = px[0]
+                c.y = px[1]
             } else {
               this.tiles[y][x] = i_src
             }
@@ -474,6 +521,30 @@ class MapLoader extends Play {
     _update() {
 
         let p = this.one(Player)!
+
+
+
+
+        if (p.t_knockback === 0) {
+            let crushes = this.objects.filter(_ => _ instanceof CrushOnCollide)
+
+            crushes.forEach(crush => {
+                if (collide_rect(crush.hitbox, p.hitbox)) {
+                    p.make(Fx, { name: 'fx_flash' })
+
+                    p.t_knockback = 1
+                    p.dy = -max_jump_dy * 0.8
+                    if (p.dx === 0) {
+                        p.dx = max_dx * 0.8
+                    } else {
+                        p.dx = - Math.sign(p.dx) * max_dx * 0.8
+                    }
+                }
+            })
+        }
+
+
+
 
         if (p.ledge_grab === undefined) {
             let down_solid = this.is_solid_xywh(p, 0, 2)
@@ -709,5 +780,5 @@ class MapLoader extends Play {
 }
 
 
-const solid_tiles = [0, 1, 2]
+const solid_tiles = [0, 1, 2, 20, 21, 22, 40, 41, 42]
 const is_solid_n = (n: number) => solid_tiles.includes(n)
