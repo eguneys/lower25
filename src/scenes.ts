@@ -136,6 +136,8 @@ class Intro extends Scene {
 
 abstract class HasPosition extends Play {
 
+    anim!: Anim
+
     _g_scale = 1
 
     w = 4
@@ -204,7 +206,7 @@ class Fx extends HasPosition {
     }
 
     _init() {
-        this.make(Anim, { name: this.data.name })
+        this.anim = this.make(Anim, { name: this.data.name })
     }
 
     _update() {
@@ -214,9 +216,20 @@ class Fx extends HasPosition {
     }
 }
 
+class Crash extends Fx {
+
+    _g_scale = .3
+
+    _init() {
+        this.anim = this.make(Anim, { name: 'crash' })
+    }
+}
+
 class Player extends HasPosition {
     w = 8
     h = 8
+
+    _shoot_cool = 0
 
     _double_jump_left = 2
     _up_counter?: number = 0
@@ -225,13 +238,13 @@ class Player extends HasPosition {
     is_left = false
     is_right = false
 
-    anim!: Anim
-
     _init() {
         this.anim = this.make(Anim, { name: 'main_char' })
     }
 
     _update() {
+
+        let is_shoot = i('x')
 
         let is_left = i('ArrowLeft') || i('a')
         let is_right = i('ArrowRight') || i('d')
@@ -320,9 +333,62 @@ class Player extends HasPosition {
                this.anim.scale_x = this.facing
             }
         }
+
+
+
+        if (is_shoot && this._shoot_cool === 0) {
+            let _ = this.parent!.pool(Bullet, { dx: this.dx, dy: 10 })
+            _.x = this.x
+            _.y = this.y
+            this._shoot_cool = .2
+        }
+        this._shoot_cool = appr(this._shoot_cool, 0, Time.dt)
     }
 
     _post_update() {
+    }
+}
+
+class Projectile extends Play {
+    w = 4
+    h = 4
+    x!: number
+    y!: number
+    dx!: number
+    dy!: number
+
+    _update() {
+        this.dy = Math.sin(this.life * 8) * Math.sin(this.life * 16) * 20
+
+
+        if (this.life > 1.5) {
+            this.remove()
+        }
+    }
+
+    draw(g: Graphics) {
+        g.push_xy(Math.floor(this.x), Math.floor(this.y))
+        super.draw(g)
+        g.pop()
+    }
+}
+
+type BulletData = {
+    dx: number,
+    dy: number
+}
+class Bullet extends Projectile {
+
+
+    get data() {
+        return this._data as BulletData
+    }
+
+    _init() {
+        this.dx = this.data.dx * 2
+        this.dy = this.data.dy
+
+        this.make(Anim, { name: 'bullet' })
     }
 }
 
@@ -569,6 +635,59 @@ class MapLoader extends Play {
         this.cam_y = this.cam_zone_y - 32
 
         this.cam_x = Math.min(Math.max(0, this.cam_x), this.world_width_px)
+
+
+        let pjs = this.objects.filter(_ => _ instanceof Projectile)
+
+
+        pjs.forEach(pj => {
+
+
+            {
+                let dy = Math.abs(pj.dy)
+                let sign = Math.sign(pj.dy)
+
+                for (let di = 0; di < dy; di += 1) {
+                    let dyy = 1 / 2 * sign * Math.sqrt(Time.dt)
+                    if (this.is_solid_xywh(pj, 0, dyy)) {
+                        pj.dy /= 2
+                        break
+                    } else {
+                        pj.y += dyy;
+
+                        {
+                            let dii = 1
+                            let sign = 1
+
+                            pj.dy += sign * dii * Time.dt
+                        }
+                    }
+                }
+            }
+
+            {
+                let dx = Math.abs(pj.dx)
+                let sign = Math.sign(pj.dx)
+                let h_accel = 1
+
+                for (let di = 0; di < dx; di += 1) {
+                    let dxx = 1 / 2 * sign * Math.sqrt(Time.dt) * h_accel
+                    if (this.is_solid_xywh(pj, dxx, 0)) {
+                        pj.dx = 0
+                        let _ = this.pool(Crash)
+                        _.x = pj.x - sign * 2
+                        _.y = pj.y
+                        _.anim.scale_x = sign
+                        this.remove(pj)
+                        break
+                    } else {
+                        pj.x += dxx
+                    }
+                }
+            }
+
+
+        })
     }
 
     _pre_draw(g: Graphics) {
