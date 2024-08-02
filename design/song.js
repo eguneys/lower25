@@ -5,7 +5,7 @@
     // use it in a demo.
 
     // Song data
-    export default {
+    var song = {
       songData: [
         { // Instrument 0
           i: [

@@ -1,9 +1,9 @@
 import CPlayer from './audio-player'
-import { song2 } from './songs'
+import { song1, pickup, damage } from './songs'
 
 export type SoundPlay = {
   generate: () => Promise<void>,
-  play: (name: string, loop?: boolean) => (() => void) | undefined
+  play: (name: string, loop?: boolean, volume?: number) => (() => void) | undefined
 }
 
 
@@ -23,7 +23,11 @@ function sound_play(): SoundPlay {
     };
 
     const data = [
-        { name: 'song', data: song2 },
+        { name: 'song', data: song1 },
+        { name: 'pickup0', data: pickup[0] },
+        { name: 'pickup1', data: pickup[1] },
+        { name: 'pickup2', data: pickup[2] },
+        { name: 'damage', data: damage },
     ];
 
     const generate = () => {
@@ -56,7 +60,7 @@ function sound_play(): SoundPlay {
 
 
 
-    const playSound = (name: string, loop = false) => {
+    const playSound = (name: string, loop = false, volume = 0.8) => {
         const buffer = sounds[name];
 
         if (!buffer) {
@@ -71,7 +75,7 @@ function sound_play(): SoundPlay {
         gainNode.connect(audioMaster);
 
         source.loop = loop;
-        gainNode.gain.value = 0.8;
+        gainNode.gain.value = volume;
         source.start();
         return () => {
             source.stop()

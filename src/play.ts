@@ -62,7 +62,11 @@ export default abstract class Play {
 
   remove(p?: Play) {
     if (!p) {
-      this.parent?.remove(this)
+      if (this.parent) {
+         this.parent.remove(this)
+      } else {
+        this.on_cleanup()
+      }
       return
     }
     let i = this.objects.indexOf(p)
@@ -76,6 +80,7 @@ export default abstract class Play {
       this.pools.splice(i, 1)
     }
 
+    p.on_cleanup()
   }
 
   init() {
@@ -87,9 +92,6 @@ export default abstract class Play {
   }
 
   update() {
-    if (!this.visible) {
-      return
-    }
     if (this.life === 0) {
       this._first_update()
     }
@@ -125,6 +127,10 @@ export default abstract class Play {
     this._draw(graphics)
   }
 
+  on_cleanup() {
+    this._on_cleanup()
+  }
+
 
   _init() {}
   _first_update() {}
@@ -132,6 +138,7 @@ export default abstract class Play {
   _post_update() {}
   _draw(_: Graphics) {}
   _pre_draw(_: Graphics) {}
+  _on_cleanup() {}
 }
 
 export type SOrigin = 'c' | 'bc' | 'tl'
@@ -159,7 +166,7 @@ export class Anim extends Play {
   }
 
   get duration() {
-    return this.data.duration ?? 400
+    return this.data.duration ?? .4
   }
 
   set duration(d: number) {
@@ -249,7 +256,7 @@ export class Anim extends Play {
 
     let d_from_to = to - from
 
-    this.__elapsed += Time.dt * 1000
+    this.__elapsed += Time.dt
 
     if (this.__elapsed >= duration_single_frame) {
       this.__elapsed -= duration_single_frame

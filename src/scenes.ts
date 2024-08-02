@@ -40,6 +40,9 @@ export function SceneManager(g: Graphics) {
     let scene: Scene
 
     const go = (scene_ctor: { new(): Scene }) => {
+        if (scene) {
+            scene.remove()
+        }
         scene = new scene_ctor()
         scene._set_data({ g, go })
         scene.init()
@@ -54,6 +57,7 @@ export function SceneManager(g: Graphics) {
         g.fr(0, 0, 64, 64, 'hsl(20, 5%, 50%)')
         g.fr(1, 1, 62, 62, 'hsl(70, 15%, 30%)')
         scene.draw(g)
+
     })
 }
 
@@ -93,6 +97,13 @@ class Scene extends Play {
         super.update()
     }
 
+
+    on_cleanup() {
+        console.log('here')
+        super.on_cleanup()
+        this.song?.()
+    }
+
 }
 
 class MyScene extends Scene {
@@ -100,7 +111,7 @@ class MyScene extends Scene {
   _init() {
 
     Content.load().then(() => {
-        let _ = this.make(Anim, { name: 'loading', tag: 'audio', duration: 1000 })
+        let _ = this.make(Anim, { name: 'loading', tag: 'audio', duration: 1 })
         _.x = 32
         _.y = 32
 
@@ -125,7 +136,7 @@ class AudioLoaded extends Scene {
 
         document.addEventListener('keydown', init)
 
-        let _ = this.make(Anim, { name: 'loading', tag: 'input', duration: 1000 })
+        let _ = this.make(Anim, { name: 'loading', tag: 'input', duration: 1 })
         _.x = 30
         _.y = 50
     }
@@ -134,10 +145,22 @@ class AudioLoaded extends Scene {
 
 class Intro extends Scene {
 
+    _l!: MapLoader
+
     _init() {
-        //this.song = a.play('song', true)
-        this.make(MapLoader)
+        this.song = a.play('song', true, 0.1)
+        this._l = this.make(MapLoader)
         this.make(UI)
+    }
+
+
+    _update() {
+
+        if (this._l.one(PlayerDie)) {
+            if (i('r')) {
+                this.go(Intro)
+            }
+        }
     }
 }
 
@@ -146,9 +169,12 @@ class UI extends Play {
 
     width = 0
     t_width = 0
+    t_restart?: number
+    restart?: Anim
 
     bump() {
         this.t_width = .9
+        a.play('pickup' + Math.floor(Math.random() * 3))
     }
 
     _init(){
@@ -167,10 +193,29 @@ class UI extends Play {
             this.t_width = 0
           }
         }
+
+        if (this.t_restart && this.t_restart > 0) {
+          this.t_restart = appr(this.t_restart, 0, Time.dt * 3)
+
+          if (this.t_restart === 0) {
+            this.t_restart = undefined
+            let _ = this.make(Anim, { name: 'restart', tag: 'bg', duration: .8 })
+            _.x = 32
+            _.y = 32
+            this.restart = this.make(Anim, { name: 'restart', duration: 5 })
+            this.restart.x = 32
+            this.restart.y = 32
+          }
+        }
+
+        if (this.restart) {
+            this.restart.y = 32 + Math.sin(this.life * 8) * 4
+        }
     }
 
     _draw(g: Graphics) {
         g.fr(6, 1, 54, 1, '#f7ffff')
+
         g.fr(6, 2, this.width, 2, '#b4d800')
 
         let bump_width = (this.t_width / .9) * 1
@@ -290,7 +335,7 @@ class Coin extends Collectible {
     t_vanish?: number
 
     _init() {
-        this.anim = this.make(Anim, { name: 'collect', tag: 'coin', duration: 800 })
+        this.anim = this.make(Anim, { name: 'collect', tag: 'coin', duration: .8 })
     }
 
     _update() {
@@ -304,7 +349,7 @@ class Coin extends Collectible {
                         this.visible = false
                     }
                 } else {
-                    if (Time.on_interval(.2)) {
+                    if (Time.on_interval(.1)) {
                         if (!this.visible) {
                             this.visible = true
                         }
@@ -320,7 +365,7 @@ class Coin extends Collectible {
         if (this.t_collect !== undefined) {
             this.t_collect = appr(this.t_collect, 0, Time.dt)
 
-            this.anim.duration = 160
+            this.anim.duration = .16
 
             if (this.t_collect === 0) {
                 let _ = this.parent!.make(Fx, { name: 'fx_collect', duration: .3 })
@@ -635,7 +680,7 @@ class MapLoader extends Play {
 
     _update() {
 
-        let p = this.one(Player)!
+        let p = this.one(Player)
         let crawlers = this.many(Crawler)
         crawlers.forEach(crawl => {
             if (this.is_solid_xywh(crawl, Math.sign(crawl.dx), 0) || 
@@ -645,7 +690,7 @@ class MapLoader extends Play {
         })
 
 
-        if (p.t_knockback === 0) {
+        if (p && p.t_knockback === 0) {
 
 
             let collects = this.objects.filter(_ => _ instanceof Collectible)
@@ -667,15 +712,17 @@ class MapLoader extends Play {
                 if (collide_rect(crush.hitbox, p.hitbox)) {
 
                     if (this.ui.width === 0) {
-                        p.visible = false
+                        p.remove()
                         let _ = this.make(PlayerDie)
                         _.x = p.x
                         _.y = p.y
+                        this.ui.t_restart = 2
                     }
 
 
                     p.make(Fx, { name: 'fx_flash' })
 
+                    a.play('damage')
                     p.t_knockback = 1
                     p.dy = -max_jump_dy * 0.8
                     if (p.dx === 0) {
@@ -689,7 +736,7 @@ class MapLoader extends Play {
                         _.y = p.y
                         _.dx = Math.sin((i / this.ui.width) * Math.PI * 2) * 8
                         _.dy = Math.cos((i / this.ui.width) * Math.PI * 2) * 80
-                        _.t_vanish = 3
+                        _.t_vanish = 5
                     }
                     this.ui.width = 0
                 }
@@ -699,7 +746,7 @@ class MapLoader extends Play {
 
 
 
-        if (p.ledge_grab === undefined) {
+        if (p && p.ledge_grab === undefined) {
             let down_solid = this.is_solid_xywh(p, 0, 2)
             let r_solid = !this.get_solid_xywh(p, 1, -1) ? this.get_solid_xywh(p, 1, 0) : undefined
             let l_solid = !this.get_solid_xywh(p, -1, -1) ? this.get_solid_xywh(p, -1, 0) : undefined
@@ -718,7 +765,7 @@ class MapLoader extends Play {
             }
         } 
 
-        if (!p.ledge_grab && p.knoll_climb === undefined) {
+        if (p && !p.ledge_grab && p.knoll_climb === undefined) {
             let r_knoll =  !this.get_solid_xywh(p, 1, -4) ? this.get_solid_xywh(p, 1, 0) : undefined
             let l_knoll =  !this.get_solid_xywh(p, -1, -4) ? this.get_solid_xywh(p, -1, 0) : undefined
 
@@ -855,12 +902,16 @@ class MapLoader extends Play {
             }
         }
 
-        let show_more = p.dx < 0 ? -50 : p.dx > 0 ? -10 : -32
-        this.cam_x = appr(this.cam_x, this.cam_zone_x + show_more, 50 * Time.dt)
-        this.cam_y = this.cam_zone_y - 32
+        if (p) {
+            let show_more = p.dx < 0 ? -50 : p.dx > 0 ? -10 : -32
+            this.cam_x = appr(this.cam_x, this.cam_zone_x + show_more, 50 * Time.dt)
+            this.cam_y = this.cam_zone_y - 32
 
-        this.cam_x = Math.min(Math.max(0, this.cam_x), this.world_width_px)
-
+            this.cam_x = Math.min(Math.max(0, this.cam_x), this.world_width_px)
+        } else {
+            this.cam_x = appr(this.cam_x, this.cam_x + Math.sin(this.life * 9) * 8, Time.dt * 8)
+            this.cam_y = appr(this.cam_y, this.cam_y + Math.cos(this.life * 9) * 8, Time.dt * 8)
+        }
 
         let pjs = this.objects.filter(_ => _ instanceof Projectile)
 
