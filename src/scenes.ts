@@ -147,10 +147,12 @@ class Intro extends Scene {
 
     _l!: MapLoader
 
+    ui!: UI
+
     _init() {
         this.song = a.play('song', true, 0.1)
-        this._l = this.make(MapLoader)
-        this.make(UI)
+        this._l = this.make(MapLoader, { level: 1 })
+        this.ui = this.make(UI)
     }
 
 
@@ -160,6 +162,14 @@ class Intro extends Scene {
             if (i('r')) {
                 this.go(Intro)
             }
+        }
+
+
+        if ((this.ui.one(VictorySign)?.life ?? 0) > 4) {
+            this._l.remove()
+            this.ui.remove()
+            this.ui = this.make(UI)
+            this._l = this.make(MapLoader, { level: 2 })
         }
     }
 }
@@ -173,8 +183,15 @@ class UI extends Play {
     restart?: Anim
 
     bump() {
+        if (this.t_width > 0) {
+            this.width++
+        }
         this.t_width = .9
         a.play('pickup' + Math.floor(Math.random() * 3))
+    }
+
+    get done() {
+        return this.width === this.max_coins
     }
 
     _init(){
@@ -213,13 +230,25 @@ class UI extends Play {
         }
     }
 
+    max_coins = 0
+
     _draw(g: Graphics) {
-        g.fr(6, 1, 54, 1, '#f7ffff')
+        g.fr(6, 1, this.max_coins, 1, '#f7ffff')
 
         g.fr(6, 2, this.width, 2, '#b4d800')
 
         let bump_width = (this.t_width / .9) * 1
         g.fr(6 + this.width, 2, bump_width, 2, '#f59562')
+    }
+}
+
+
+class VictorySign extends Play {
+
+    _init() {
+        let _ =this.make(Anim, { name: 'victory', duration: 1 })
+        _.x = 32
+        _.y = 32
     }
 }
 
@@ -423,6 +452,13 @@ class PlayerDie extends HasPosition {
     }
 }
 
+class PlayerVictory extends HasPosition {
+
+    _init() {
+        this.make(Anim, { name: 'main_char', tag: 'victory' })
+    }
+}
+
 class Player extends HasPosition {
     w = 8
     h = 8
@@ -603,7 +639,15 @@ class Bullet extends Projectile {
 
 type XYWH = { x: number, y: number, w: number, h: number }
 
+type MapLoaderData = {
+    level: number
+}
+
 class MapLoader extends Play {
+
+    get data() {
+        return this._data as MapLoaderData
+    }
 
     get ui() {
         return this.parent!.one(UI)!
@@ -658,13 +702,14 @@ class MapLoader extends Play {
 
     _init() {
 
-        let l = Content.levels[0]
+        let l = Content.levels[this.data.level - 1]
 
         this.tiles = []
         for (let i = 0; i < l.h; i++) {
             this.tiles[i] = Array(l.w)
         }
 
+        let nb_coin = 0
         for (let i = 0; i < l.te.length; i++) {
             let { px, src } = l.te[i]
 
@@ -690,15 +735,38 @@ class MapLoader extends Play {
                 let c = this.make(Coin)
                 c.x = px[0]
                 c.y = px[1]
+                nb_coin ++
             } else {
               this.tiles[y][x] = i_src
             }
         }
+
+        this.nb_coin = nb_coin
+    }
+
+    nb_coin = 0
+
+    _first_update(): void {
+        this.ui.max_coins = this.nb_coin
     }
 
     _update() {
 
         let p = this.one(Player)
+        
+
+        if (p && this.ui.done) {
+            let _ = this.make(PlayerVictory)
+            _.x = p.x
+            _.y = p.y
+            p.remove()
+
+            this.one(Flies)?.remove()
+
+
+            this.ui.make(VictorySign)
+        }
+
         let crawlers = this.many(Crawler)
         crawlers.forEach(crawl => {
             if (this.is_solid_xywh(crawl, Math.sign(crawl.dx), 0) || 
@@ -904,29 +972,33 @@ class MapLoader extends Play {
 
         })
 
+        let pv = this.one(PlayerVictory)
+        let fw = p || pv
 
-        if (p) {
-            if (this.cam_zone_x < (p.x - 4) - 1) {
-                this.cam_zone_x = (p.x - 4) - 1 
+        if (fw) {
+            if (this.cam_zone_x < (fw.x - 4) - 1) {
+                this.cam_zone_x = (fw.x - 4) - 1 
             }
-            if (this.cam_zone_x > (p.x + 4) + 1) {
-                this.cam_zone_x = (p.x + 4) + 1
+            if (this.cam_zone_x > (fw.x + 4) + 1) {
+                this.cam_zone_x = (fw.x + 4) + 1
             }
-            if (this.cam_zone_y < p.y - 8) {
-                this.cam_zone_y = p.y - 8
+            if (this.cam_zone_y < fw.y - 8) {
+                this.cam_zone_y = fw.y - 8
             }
-            if (this.cam_zone_y > p.y + 8) {
-                this.cam_zone_y = p.y + 8
+            if (this.cam_zone_y > fw.y + 8) {
+                this.cam_zone_y = fw.y + 8
             }
         }
 
-        if (p) {
-            let show_more = p.dx < 0 ? -50 : p.dx > 0 ? -10 : -32
+        if (fw) {
+            let show_more = fw.dx < 0 ? -50 : fw.dx > 0 ? -10 : -32
             this.cam_x = appr(this.cam_x, this.cam_zone_x + show_more, 50 * Time.dt)
             this.cam_y = this.cam_zone_y - 32
 
             this.cam_x = Math.min(Math.max(0, this.cam_x), this.world_width_px)
-        } else {
+        } 
+       
+        if (this.one(PlayerDie)) {
             this.cam_x = appr(this.cam_x, this.cam_x + Math.sin(this.life * 9) * 8, Time.dt * 8)
             this.cam_y = appr(this.cam_y, this.cam_y + Math.cos(this.life * 9) * 8, Time.dt * 8)
         }
@@ -1022,6 +1094,9 @@ class MapLoader extends Play {
                 _.y = p.y
                 _.anim.scale_x = Math.max(1, Math.sign(p.dx))
         }
+
+
+
     }
 
     _pre_draw(g: Graphics) {

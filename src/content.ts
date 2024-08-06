@@ -143,7 +143,6 @@ class Content {
     this.info = decon(content_con0)
 
     this.tiles = this.info.find(_ => _.name === 'tiles')!.packs[0]
-    console.log(this.info)
 
     this.levels = decon_levels(levels_json)
   }
