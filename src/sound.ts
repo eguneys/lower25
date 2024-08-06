@@ -1,5 +1,5 @@
 import CPlayer from './audio-player'
-import { song1, pickup, damage } from './songs'
+import { song3, pickup, damage } from './songs'
 
 export type SoundPlay = {
   generate: () => Promise<void>,
@@ -23,7 +23,7 @@ function sound_play(): SoundPlay {
     };
 
     const data = [
-        { name: 'song', data: song1 },
+        { name: 'song', data: song3 },
         { name: 'pickup0', data: pickup[0] },
         { name: 'pickup1', data: pickup[1] },
         { name: 'pickup2', data: pickup[2] },

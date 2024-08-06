@@ -402,6 +402,16 @@ class Crawler extends CrushOnCollide {
 
 }
 
+
+class Flies extends HasPosition {
+
+    _g_scale = 0
+
+    _init() {
+        this.anim = this.make(Anim, { name: 'flies', duration: 1 })
+    }
+}
+
 class PlayerDie extends HasPosition {
 
     _g_scale = 0
@@ -664,6 +674,11 @@ class MapLoader extends Play {
                 let p = this.make(Player)
                 p.x = px[0]
                 p.y = px[1]
+
+                let f = this.make(Flies)
+                f.x = px[0]
+                f.y = px[1] - 8
+
             } else if (i_src === 398) {
                 let c = this.make(Crawler)
                 c.x = px[0]
@@ -723,7 +738,7 @@ class MapLoader extends Play {
                     p.make(Fx, { name: 'fx_flash' })
 
                     a.play('damage')
-                    p.t_knockback = 1
+                    p.t_knockback = .6
                     p.dy = -max_jump_dy * 0.8
                     if (p.dx === 0) {
                         p.dx = max_dx * 0.8
@@ -964,6 +979,27 @@ class MapLoader extends Play {
 
 
         })
+
+
+        let f = this.one(Flies)
+
+
+        if (f && p) {
+           f.x = appr(f.x, p.x + Math.cos(p.life * 8) * 4, Time.dt * 26)
+           f.y = appr(f.y, p.y - 8 + Math.sin(p.life * 8) * 8, Time.dt * 26)
+
+
+           if (Math.abs(f.x - p.x) + Math.abs(f.y - p.y) <= 16) {
+               f.anim.play_tag('idle')
+           } else {
+               f.anim.play_tag('run')
+           }
+
+            f.anim.scale_x = p.anim.scale_x
+        }
+
+
+
     }
 
     _pre_draw(g: Graphics) {
