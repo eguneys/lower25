@@ -495,11 +495,13 @@ class Player extends HasPosition {
                     this.dy = -max_jump_dy
                     this._up_counter = undefined
                     this._double_jump_left = 1
+                    a.play('jump')
                 } else if (this._double_jump_left > 0) {
                     this.dy = -max_jump_dy
                     this._up_counter = undefined
                     this._double_jump_left = 0
 
+                    a.play('djump')
                     let _ = this.parent!.make(Fx, { name: 'fx_djump', duration: 0.4 })
                     _.x = this.x
                     _.y = this.y + 5
@@ -1007,7 +1009,7 @@ class MapLoader extends Play {
                 dust = 'idle'
             }
         }
-        if (!p?.pre_grounded && p.grounded) {
+        if (p && !p?.pre_grounded && p.grounded) {
             dust = 'jump'
         }
 
