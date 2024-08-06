@@ -286,7 +286,8 @@ abstract class HasPosition extends Play {
 
 type FxData = {
     duration?: number,
-    name: string
+    name: string,
+    tag?: string,
 }
 
 class Fx extends HasPosition {
@@ -302,7 +303,7 @@ class Fx extends HasPosition {
     }
 
     _init() {
-        this.anim = this.make(Anim, { name: this.data.name })
+        this.anim = this.make(Anim, { name: this.data.name, tag: this.data.tag })
     }
 
     _update() {
@@ -985,7 +986,7 @@ class MapLoader extends Play {
 
 
         if (f && p) {
-           f.x = appr(f.x, p.x + Math.cos(p.life * 8) * 4, Time.dt * 26)
+           f.x = appr(f.x, p.x + Math.cos(p.life * 8) * 4, Time.dt * 30)
            f.y = appr(f.y, p.y - 8 + Math.sin(p.life * 8) * 8, Time.dt * 26)
 
 
@@ -999,7 +1000,26 @@ class MapLoader extends Play {
         }
 
 
+        let dust = 'none'
+        if (p && p.grounded && p.dx !== 0) {
+            if (Time.on_interval(0.3 + Math.random() * 0.5)) {
 
+                dust = 'idle'
+            }
+        }
+        if (!p?.pre_grounded && p.grounded) {
+            dust = 'jump'
+        }
+
+        if (p && dust !== 'none') {
+                let _ = this.make(Fx, { name: 'fx_dust', tag: dust, duration: .4 })
+                _.x = p.x
+                if (dust === 'idle') {
+                    _.x += - Math.sign(p.dx) * 4
+                }
+                _.y = p.y
+                _.anim.scale_x = Math.max(1, Math.sign(p.dx))
+        }
     }
 
     _pre_draw(g: Graphics) {
