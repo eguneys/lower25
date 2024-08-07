@@ -135,6 +135,18 @@ class AudioLoaded extends Scene {
 class Endgame extends Scene {
     _init() {
 
+        let _ = this.make(Anim, { name: 'end' })
+        _.x = 32
+        _.y = 32
+    }
+
+    _update() {
+        if (this.life > 4) {
+
+            if (i('x')) {
+                this.go(Intro, { level: 1 })
+            }
+        }
     }
 }
 
@@ -162,7 +174,7 @@ class Intro extends Scene {
     _update() {
 
         if (this._l.one(PlayerDie)) {
-            if (i('r')) {
+            if (i('x')) {
                 this.go(Intro, { level: this.data.level })
             }
         }
