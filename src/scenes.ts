@@ -400,6 +400,9 @@ class Coin extends Collectible {
 
     t_vanish?: number
 
+    base_x!: number
+    base_y!: number
+
     _init() {
         this.anim = this.make(Anim, { name: 'collect', tag: 'coin', duration: .8 })
     }
@@ -424,6 +427,7 @@ class Coin extends Collectible {
             }
 
             if (this.t_vanish === 0) {
+                ;(this.parent as MapLoader).recycle_coin()
                 this.remove()
             }
         }
@@ -438,6 +442,7 @@ class Coin extends Collectible {
                 _.x = this.x
                 _.y = this.y
 
+                ;(this.parent as MapLoader).push_recycle(this)
                 this.remove()
             }
 
@@ -681,6 +686,23 @@ type MapLoaderData = {
 
 class MapLoader extends Play {
 
+    coin_bash: [number, number][] = []
+    push_recycle(coin: Coin) {
+        if (coin.base_x) {
+           this.coin_bash.push([coin.base_x, coin.base_y])
+        }
+    }
+    recycle_coin() {
+        let xy = this.coin_bash.pop()
+        if (xy) {
+            let _ = this.make(Coin)
+            _.x = xy[0]
+            _.y = xy[1]
+            _.base_x = xy[0]
+            _.base_y = xy[1]
+        }
+    }
+
     get data() {
         return this._data as MapLoaderData
     }
@@ -771,6 +793,8 @@ class MapLoader extends Play {
                 let c = this.make(Coin)
                 c.x = px[0]
                 c.y = px[1]
+                c.base_x = px[0]
+                c.base_y = px[1]
                 nb_coin ++
             } else {
               this.tiles[y][x] = i_src
