@@ -39,12 +39,13 @@ export function SceneManager(g: Graphics) {
 
     let scene: Scene
 
-    const go = (scene_ctor: { new(): Scene }) => {
+    const go = (scene_ctor: { new(): Scene }, data?: any) => {
         if (scene) {
             scene.remove()
         }
-        scene = new scene_ctor()
-        scene._set_data({ g, go })
+        scene = new scene_ctor()._set_data(data)
+        scene.g = g
+        scene.go = go
         scene.init()
     }
 
@@ -65,19 +66,8 @@ class Scene extends Play {
     up_p = false
     song?: () => void
 
-
-
-    get data() {
-        return this._data as { g: Graphics, go: (_: { new(): Scene }) => void}
-    }
-
-    get g() {
-        return this.data.g
-    }
-
-    go(_: { new(): Scene }) {
-        this.data.go(_)
-    }
+    g!: Graphics
+    go!: (_: { new(): Scene }, data?: any)  => void
 
     update() {
 
@@ -99,7 +89,6 @@ class Scene extends Play {
 
 
     on_cleanup() {
-        console.log('here')
         super.on_cleanup()
         this.song?.()
     }
@@ -117,7 +106,7 @@ class MyScene extends Scene {
 
         a.generate().then(() => {
            // this.go(AudioLoaded)
-           this.go(Intro)
+           this.go(Intro, { level: 2 })
         })
     })
   }
@@ -143,7 +132,21 @@ class AudioLoaded extends Scene {
 }
 
 
+class Endgame extends Scene {
+    _init() {
+
+    }
+}
+
+type IntroData = {
+    level: number
+}
+
 class Intro extends Scene {
+
+    get data() {
+        return this._data as IntroData
+    }
 
     _l!: MapLoader
 
@@ -151,7 +154,7 @@ class Intro extends Scene {
 
     _init() {
         this.song = a.play('song', true, 0.1)
-        this._l = this.make(MapLoader, { level: 1 })
+        this._l = this.make(MapLoader, { level: this.data.level })
         this.ui = this.make(UI)
     }
 
@@ -160,16 +163,18 @@ class Intro extends Scene {
 
         if (this._l.one(PlayerDie)) {
             if (i('r')) {
-                this.go(Intro)
+                this.go(Intro, { level: this.data.level })
             }
         }
 
 
         if ((this.ui.one(VictorySign)?.life ?? 0) > 4) {
-            this._l.remove()
-            this.ui.remove()
-            this.ui = this.make(UI)
-            this._l = this.make(MapLoader, { level: 2 })
+            if (this.data.level === 3) {
+
+                this.go(Endgame)
+            } else {
+                this.go(Intro, { level: (this.data.level + 1) })
+            }
         }
     }
 }
@@ -242,13 +247,12 @@ class UI extends Play {
     }
 }
 
-
 class VictorySign extends Play {
 
     _init() {
         let _ =this.make(Anim, { name: 'victory', duration: 1 })
         _.x = 32
-        _.y = 32
+        _.y = 20
     }
 }
 
@@ -313,6 +317,7 @@ abstract class HasPosition extends Play {
     }
 }
 
+
 type FxData = {
     duration?: number,
     name: string,
@@ -341,6 +346,25 @@ class Fx extends HasPosition {
         }
     }
 }
+
+class Confetti extends Fx {
+
+    _init() {
+        this.anim = this.make(Anim, { name: 'confetti' })
+    }
+
+    _update() {
+        this.y -= (Math.sin(this.life * 3) * 1 + 12) * Time.dt
+    }
+
+    _draw(g: Graphics) {
+        g.push_xy(this.x + Math.sin(this.life * 4) * 3, this.y)
+        this.anim._draw(g)
+        g.pop()
+    }
+}
+
+
 
 class Crash extends Fx {
 
@@ -973,6 +997,20 @@ class MapLoader extends Play {
         })
 
         let pv = this.one(PlayerVictory)
+
+
+        if (pv) {
+            if (Time.on_interval(0.6)) {
+                for (let i = 0; i < 4; i++) {
+                    let _ = this.make(Confetti)
+                    _.x = (i / 3) * 64 + Math.sin(this.life * 6) * 3
+                    _.y = 64
+                }
+            }
+        }
+
+
+
         let fw = p || pv
 
         if (fw) {
