@@ -678,6 +678,23 @@ class Bullet extends Projectile {
     }
 }
 
+class Info extends HasPosition {
+
+    static infos: string[] = []
+
+    _g_scale = 0
+
+    _init() {
+        if (Info.infos.length === 0) {
+            Info.infos = ['run', 'jump', 'djump', 'shoot']
+        }
+        let tag = Info.infos.shift()
+        console.log(tag)
+        this.anim = this.make(Anim, { name: 'info', tag})
+    }
+
+}
+
 type XYWH = { x: number, y: number, w: number, h: number }
 
 type MapLoaderData = {
@@ -796,6 +813,10 @@ class MapLoader extends Play {
                 c.base_x = px[0]
                 c.base_y = px[1]
                 nb_coin ++
+            } else if (i_src === 396) {
+                let i = this.make(Info)
+                i.x = px[0]
+                i.y = px[1]
             } else {
               this.tiles[y][x] = i_src
             }
