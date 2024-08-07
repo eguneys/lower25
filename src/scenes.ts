@@ -106,7 +106,7 @@ class MyScene extends Scene {
 
         a.generate().then(() => {
            // this.go(AudioLoaded)
-           this.go(Intro, { level: 2 })
+           this.go(Intro, { level: 1 })
         })
     })
   }
