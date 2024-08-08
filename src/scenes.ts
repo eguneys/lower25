@@ -7,10 +7,10 @@ import Time, { my_loop } from "./time"
 
 
 const max_dx = 8
-const _G = 4
-const jump_max_accel_y = 0.8
-const fall_max_accel_y = 3
-const max_dy = 4 * _G + 2 * fall_max_accel_y * _G
+const _G = 1.6
+const jump_max_accel_y = 3.3
+const fall_max_accel_y = 12
+const max_dy = 30
 const max_jump_dy = max_dy
 
 function appr(v: number, t: number, by: number) {
@@ -297,6 +297,17 @@ abstract class HasPosition extends Play {
     ledge_grab?: number
     knoll_climb?: number
 
+
+    pre_y = 0
+
+    get jumping() {
+        return this.pre_y > this.y
+    }
+
+    get falling() {
+        return this.pre_y < this.y
+    }
+
     get facing() {
         return Math.sign(this.dx)
     }
@@ -326,6 +337,7 @@ abstract class HasPosition extends Play {
     update() {
         super.update()
         this.pre_grounded = this.grounded
+        this.pre_y = this.y
     }
 }
 
@@ -834,7 +846,6 @@ class MapLoader extends Play {
     _update() {
 
         let p = this.one(Player)
-        
 
         if (p && this.ui.done) {
             let _ = this.make(PlayerVictory)
@@ -1013,9 +1024,8 @@ class MapLoader extends Play {
                 }
             }
 
-            {
-
-                let dy = fall_max_accel_y * G
+            if (body.dy > -1) {
+                let dy = (fall_max_accel_y * G)
                 let sign = 1
 
                 for (let di = 0; di < dy; di += 1) {
